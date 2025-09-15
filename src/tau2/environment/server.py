@@ -7,7 +7,13 @@ from typing_extensions import Annotated
 
 from tau2.environment.environment import Environment
 from tau2.environment.toolkit import get_tool_signatures
+from tau2.run import get_options, load_tasks, run_domain
 
+from pydantic import BaseModel
+from typing import List
+
+class GetTasksResponse(BaseModel):
+    tasks: List[dict]
 
 class EnvironmentServer:
     """
@@ -112,6 +118,63 @@ All successful responses will return the tool's output directly. Errors will ret
         if self.environment.user_tools is not None:
             user_tool_signatures = get_tool_signatures(self.environment.user_tools)
             self._setup_tool_routes(user_tool_signatures, "user_tools")
+
+        self._setup_extra_routes()
+
+    def _setup_extra_routes(self):
+        """Set up the three new API endpoints"""
+
+        @self.app.get("/api/v1/get_policy", response_model=str, tags=["Environment"])
+        async def get_policy_api():
+            """
+            Get the environment policy as plain text.
+            Useful for constructing prompts.
+            """
+            try:
+                return self.environment.get_policy()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+
+        @self.app.get("/api/v1/get_tools", tags=["Environment"])
+        async def get_tools_api():
+            """
+            Get tool signatures as JSON.
+            Useful for OpenAI function/tool calling.
+            """
+            try:
+                tools = {}
+                for name, tool in self.environment.tools.get_tools().items():
+                    tools[name] = tool.openai_schema
+                user_tools = {}
+                if self.environment.user_tools:
+                    for name, tool in self.environment.user_tools.get_tools().items():
+                        user_tools[name] = tool.openai_schema
+                return {"tools": tools, "user_tools": user_tools}
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+
+        @self.app.post("/api/v1/get_tasks", response_model=GetTasksResponse, tags=["Environment"])
+        async def get_tasks_api():
+            """
+            Get tasks for a given domain.
+            Returns a list of JSON tasks.
+            """
+            try:
+                tasks = load_tasks(self.environment.get_domain_name())
+
+                # Convert Task objects -> dict
+                tasks_as_dicts = []
+                for t in tasks:
+                    if hasattr(t, "model_dump"):  # if it's a Pydantic model
+                        tasks_as_dicts.append(t.model_dump())
+                    elif hasattr(t, "dict"):  # legacy Pydantic v1 style
+                        tasks_as_dicts.append(t.dict())
+                    else:  # fallback: use __dict__
+                        tasks_as_dicts.append(t.__dict__)
+
+                return GetTasksResponse(tasks=tasks_as_dicts)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
 
     def _setup_tool_routes(self, tool_signatures: dict, route_prefix: str):
         """Helper method to set up routes for a set of tools"""

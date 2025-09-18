@@ -1,7 +1,7 @@
 import json
 from typing import Any, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from pydantic import create_model
 from typing_extensions import Annotated
 
@@ -11,6 +11,10 @@ from tau2.run import get_options, load_tasks, run_domain
 
 from pydantic import BaseModel
 from typing import List
+
+from tau2.evaluator.evaluator import EvaluationType, evaluate_simulation
+from tau2.data_model.simulation import RewardInfo, SimulationRun, TerminationReason
+from tau2.data_model.tasks import RewardType, Task
 
 class GetTasksResponse(BaseModel):
     tasks: List[dict]
@@ -173,6 +177,28 @@ All successful responses will return the tool's output directly. Errors will ret
                         tasks_as_dicts.append(t.__dict__)
 
                 return GetTasksResponse(tasks=tasks_as_dicts)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+
+        @self.app.post("/api/v1/get_reward", response_model=RewardInfo, tags=["Evaluation"])
+        async def get_reward_api(
+            simulation: SimulationRun = Body(..., description="Simulation run to evaluate"),
+            task: Task = Body(..., description="Task definition"),
+            evaluation_type: EvaluationType = Body(..., description="Type of evaluation"),
+            solo_mode: bool = Body(False, description="Whether to run in solo mode"),
+        ):
+            """
+            Evaluate a simulation run given a task and evaluation type.
+            Returns a `RewardInfo` object.
+            """
+            try:
+                return evaluate_simulation(
+                    simulation=simulation,
+                    task=task,
+                    evaluation_type=evaluation_type,
+                    solo_mode=solo_mode,
+                    domain=self.environment.get_domain_name(),
+                )
             except Exception as e:
                 raise HTTPException(status_code=500, detail=str(e))
 

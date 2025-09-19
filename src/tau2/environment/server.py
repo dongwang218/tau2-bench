@@ -200,7 +200,10 @@ All successful responses will return the tool's output directly. Errors will ret
                     domain=self.environment.get_domain_name(),
                 )
             except Exception as e:
-                raise HTTPException(status_code=500, detail=str(e))
+                import traceback
+                tb_str = traceback.format_exc()
+                traceback.print_exc()
+                raise HTTPException(status_code=400, detail=tb_str)
 
     def _setup_tool_routes(self, tool_signatures: dict, route_prefix: str):
         """Helper method to set up routes for a set of tools"""
@@ -257,7 +260,10 @@ All successful responses will return the tool's output directly. Errors will ret
                         result = self.environment.use_tool(
                             tool_name=tool_name, **request.model_dump()
                         )
-                    return result
+                    if isinstance(result, BaseModel):
+                        return json.loads(Environment.to_json_str(result))  # keep datetime format consistent w/o T
+                    else:
+                        return result
                 except Exception as e:
                     raise HTTPException(status_code=400, detail=str(e))
 
@@ -312,5 +318,4 @@ The response will be the direct output of the tool execution.
             port: The port to bind to
         """
         import uvicorn
-
         uvicorn.run(self.app, host=host, port=port)

@@ -651,9 +651,9 @@ class TelecomTools(ToolKitBase):
         )
 
         return {
-            "message": f"Successfully added {gb_amount} GB of data for line {line_id} for ${charge_amount:.2f}",
-            "new_data_refueling_gb": target_line.data_refueling_gb,
-            "charge": charge_amount,
+            "message": f"Successfully added {float(gb_amount)} GB of data for line {line_id} for ${charge_amount:.2f}",
+            "new_data_refueling_gb": f"{target_line.data_refueling_gb}",
+            "charge": f"{charge_amount}",
         }
 
     ### Break tools

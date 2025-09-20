@@ -217,6 +217,26 @@ All successful responses will return the tool's output directly. Errors will ret
                 traceback.print_exc()
                 raise HTTPException(status_code=400, detail=tb_str)
 
+        @self.app.post("/api/v1/run_tools", tags=["Environment"])
+        async def run_tools(
+            env_function_call: EnvFunctionCall = Body(..., description="Tool function call to execute")
+        ) -> Any:
+            try:
+                if env_function_call.env_type == "user":
+                    result = self.environment.use_user_tool(
+                        tool_name=env_function_call.func_name, **env_function_call.arguments
+                    )
+                else:
+                    result = self.environment.use_tool(
+                        tool_name=env_function_call.func_name, **env_function_call.arguments
+                    )
+                if isinstance(result, BaseModel):
+                    return json.loads(Environment.to_json_str(result))  # keep datetime format consistent w/o T
+                else:
+                    return result
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=str(e))
+
     def _setup_tool_routes(self, tool_signatures: dict, route_prefix: str):
         """Helper method to set up routes for a set of tools"""
         for name, signature in tool_signatures.items():

@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException, Body
 from pydantic import create_model
 from typing_extensions import Annotated
 
-from tau2.environment.environment import Environment
+from tau2.environment.environment import Environment, EnvFunctionCall
 from tau2.environment.toolkit import get_tool_signatures
 from tau2.run import get_options, load_tasks, run_domain
 
@@ -199,6 +199,18 @@ All successful responses will return the tool's output directly. Errors will ret
                     solo_mode=solo_mode,
                     domain=self.environment.get_domain_name(),
                 )
+            except Exception as e:
+                import traceback
+                tb_str = traceback.format_exc()
+                traceback.print_exc()
+                raise HTTPException(status_code=400, detail=tb_str)
+
+        @self.app.post("/api/v1/run_env_function", tags=["Environment"])
+        async def run_env_function(
+            env_function_call: EnvFunctionCall = Body(..., description="Environment function call to execute")
+        ) -> Any:
+            try:
+                return self.environment.run_env_function_call(env_function_call)
             except Exception as e:
                 import traceback
                 tb_str = traceback.format_exc()

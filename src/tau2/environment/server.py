@@ -242,8 +242,7 @@ All successful responses will return the tool's output directly. Errors will ret
         async def sync_tools(
         ) -> Any:
             try:
-                self.environment.sync_tools()
-                return "Tools synchronized successfully"
+                return self.environment.sync_tools()
             except Exception as e:
                 raise HTTPException(status_code=400, detail=str(e))
 

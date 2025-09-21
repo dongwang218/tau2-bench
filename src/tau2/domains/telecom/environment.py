@@ -37,13 +37,17 @@ class TelecomEnvironment(Environment):
     ):
         super().__init__(domain_name, policy, tools, user_tools)
 
-    def sync_tools(self):
+    def sync_tools(self) -> None:
         """
         Sync the tools with the user's surroundings.
         If the line is roaming enabled, then the user is allowed to roam.
         """
+        before = self.user_tools.db.surroundings.model_copy()
         if self.user_tools.db.surroundings.phone_number is None:
-            return
+            return {
+                "before": before,
+                "after": before,
+            }
         phone_number = self.user_tools.db.surroundings.phone_number
         line = self.tools._get_line_by_phone(phone_number)
         if line is None:
@@ -92,6 +96,10 @@ class TelecomEnvironment(Environment):
                 self.user_tools.db.surroundings.payment_request = PaymentRequest(
                     bill_id=bill.bill_id, amount_due=bill.total_due
                 )
+        return {
+            "before": before,
+            "after": self.user_tools.db.surroundings.model_copy(),
+        }
 
 
 def get_environment(

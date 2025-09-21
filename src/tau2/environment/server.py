@@ -227,6 +227,7 @@ All successful responses will return the tool's output directly. Errors will ret
                         tool_name=env_function_call.func_name, **env_function_call.arguments
                     )
                 else:
+                    assert env_function_call.env_type == "assistant", "env_type must be 'assistant' or 'user'"
                     result = self.environment.use_tool(
                         tool_name=env_function_call.func_name, **env_function_call.arguments
                     )
@@ -234,6 +235,15 @@ All successful responses will return the tool's output directly. Errors will ret
                     return json.loads(Environment.to_json_str(result))  # keep datetime format consistent w/o T
                 else:
                     return result
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=str(e))
+
+        @self.app.post("/api/v1/sync_tools", tags=["Environment"])
+        async def sync_tools(
+        ) -> Any:
+            try:
+                self.environment.sync_tools()
+                return "Tools synchronized successfully"
             except Exception as e:
                 raise HTTPException(status_code=400, detail=str(e))
 

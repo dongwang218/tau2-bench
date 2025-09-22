@@ -507,9 +507,9 @@ class TelecomTools(ToolKitBase):
 
         return {
             "line_id": line_id,
-            "data_used_gb": target_line.data_used_gb,
-            "data_limit_gb": plan.data_limit_gb,
-            "data_refueling_gb": target_line.data_refueling_gb,
+            "data_used_gb": f"target_line.data_used_gb",
+            "data_limit_gb": f"plan.data_limit_gb",
+            "data_refueling_gb": f"target_line.data_refueling_gb",
             "cycle_end_date": cycle_end_date,
         }
 

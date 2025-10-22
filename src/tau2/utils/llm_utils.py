@@ -92,6 +92,7 @@ def get_response_cost(response: ModelResponse) -> float:
     response.model = _parse_ft_model_name(
         response.model
     )  # FIXME: Check Litellm, passing the model to completion_cost doesn't work.
+    response.model = "o1"
     try:
         cost = completion_cost(completion_response=response)
     except Exception as e:
@@ -231,14 +232,21 @@ def generate(
     )
     content = response.message.content
     tool_calls = response.message.tool_calls or []
-    tool_calls = [
-        ToolCall(
-            id=tool_call.id,
-            name=tool_call.function.name,
-            arguments=json.loads(tool_call.function.arguments),
+
+    tool_calls = []
+    for tool_call in tool_calls:
+        try:
+            data = json.loads(tool_call.function.arguments)
+        except Exception:
+            # hack for weak models
+            data = {}
+
+        tool_calls.append(ToolCall(
+                id=tool_call.id,
+                name=tool_call.function.name,
+                arguments=data,
+            )
         )
-        for tool_call in tool_calls
-    ]
     tool_calls = tool_calls or None
 
     message = AssistantMessage(

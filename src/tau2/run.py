@@ -127,13 +127,13 @@ def run_domain(config: RunConfig) -> Results:
         max_steps=config.max_steps,
         max_errors=config.max_errors,
         save_to=save_to,
-        console_display=True,
+        console_display=False, # turn this off to save output
         evaluation_type=EvaluationType.ALL,
         max_concurrency=config.max_concurrency,
         seed=config.seed,
         log_level=config.log_level,
     )
-    metrics = compute_metrics(simulation_results)
+    metrics = compute_metrics(simulation_results) # do we need this
     ConsoleDisplay.display_agent_metrics(metrics)
 
     return simulation_results
@@ -227,7 +227,7 @@ def run_tasks(
     done_runs = set()
     if save_to is not None:
         # If save_to already exists, check if the user wants to resume the run.
-        if save_to.exists():
+        if False: # save_to.exists():
             response = (
                 ConsoleDisplay.console.input(
                     "[yellow]File [bold]{}[/bold] already exists. Do you want to resume the run? (y/n)[/yellow] ".format(

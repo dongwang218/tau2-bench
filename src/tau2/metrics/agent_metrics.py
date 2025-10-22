@@ -111,11 +111,12 @@ def compute_metrics(results: Results) -> AgentMetrics:
     df, df_pass_hat_k = prepare_dfs(results)
     avg_reward = df.reward.mean()
     pass_hat_ks = {}
-    for column in df_pass_hat_k.columns:
-        if match := re.match(r"pass\^(\d+)", column):
-            k = int(match.group(1))
-            pass_hat_ks[k] = df_pass_hat_k[column].mean()
-    avg_agent_cost = df.agent_cost.mean()
+    avg_agent_cost = 0
+    # for column in df_pass_hat_k.columns:
+    #     if match := re.match(r"pass\^(\d+)", column):
+    #         k = int(match.group(1))
+    #         pass_hat_ks[k] = df_pass_hat_k[column].mean()
+    # avg_agent_cost = df.agent_cost.mean()
     return AgentMetrics(
         avg_reward=avg_reward,
         pass_hat_ks=pass_hat_ks,
